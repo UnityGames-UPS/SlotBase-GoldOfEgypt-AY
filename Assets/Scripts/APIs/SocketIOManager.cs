@@ -43,7 +43,7 @@ public class SocketIOManager : MonoBehaviour
 
     protected string SocketURI = null;
     //protected string TestSocketURI = "https://game-crm-rtp-backend.onrender.com/";
-    protected string TestSocketURI = "https://frnp4zmn-5000.inc1.devtunnels.ms/";
+    protected string TestSocketURI = "https://sl3l5zz3-5000.inc1.devtunnels.ms/";
 
     [SerializeField]
     private string testToken;
@@ -98,30 +98,21 @@ public class SocketIOManager : MonoBehaviour
         // Application.ExternalCall("window.parent.postMessage", "authToken", "*");
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-    string url = Application.absoluteURL;
-    Debug.Log("Unity URL : " + url);
-    ExtractUrlAndToken(url);
-
-    Func<SocketManager, Socket, object> webAuthFunction = (manager, socket) =>
-    {
-      return new
-      {
-        token = testToken,
-      };
-    };
-    options.Auth = webAuthFunction;
+        JSManager.SendCustomMessage("authToken");
+        StartCoroutine(WaitForAuthToken(options));
 #else
         Func<SocketManager, Socket, object> authFunction = (manager, socket) =>
         {
             return new
             {
                 token = testToken,
+                gameId = gameID
             };
         };
         options.Auth = authFunction;
-#endif
         // Proceed with connecting to the server
         SetupSocketManager(options);
+#endif
     }
 
     public void ExtractUrlAndToken(string fullUrl)
@@ -175,7 +166,6 @@ public class SocketIOManager : MonoBehaviour
             return new
             {
                 token = myAuth,
-                gameId = gameID
             };
         };
         options.Auth = authFunction;
@@ -303,13 +293,19 @@ public class SocketIOManager : MonoBehaviour
     internal void closeSocketReactnativeCall()
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
-    JSManager.SendCustomMessage("onExit");
+    JSManager.SendCustomMessage("OnExit");
 #endif
+        this.manager.Close();
     }
 
     internal void CloseSocket()
     {
-        SendDataWithNamespace("EXIT");
+        // SendDataWithNamespace("EXIT");
+#if UNITY_WEBGL && !UNITY_EDITOR
+    JSManager.SendCustomMessage("OnExit");
+#endif
+
+        this.manager.Close();
     }
 
     private void ParseResponse(string jsonObject)
@@ -363,7 +359,7 @@ public class SocketIOManager : MonoBehaviour
                     }
                    // Application.ExternalCall("window.parent.postMessage", "onExit", "*");
 #if UNITY_WEBGL && !UNITY_EDITOR
-                        JSManager.SendCustomMessage("onExit");
+                        JSManager.SendCustomMessage("OnExit");
 #endif
                     break;
                 }

@@ -5020,7 +5020,7 @@ MonoBehaviour:
   bonusdata: []
   _jsManager: {fileID: 500036493}
   JSManager: {fileID: 781514454}
-  testToken: 10293ac8589743339ec15a59204947b9
+  testToken: 9020088d6655488fbf2f238f9a2c548e
 --- !u!114 &500036493
 MonoBehaviour:
   m_ObjectHideFlags: 0
