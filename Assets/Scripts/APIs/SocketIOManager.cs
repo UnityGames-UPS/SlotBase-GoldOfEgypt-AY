@@ -43,7 +43,7 @@ public class SocketIOManager : MonoBehaviour
 
     protected string SocketURI = null;
     //protected string TestSocketURI = "https://game-crm-rtp-backend.onrender.com/";
-    protected string TestSocketURI = "https://sl3l5zz3-5000.inc1.devtunnels.ms/";
+    protected string TestSocketURI = "https://vd20qkgb-5000.inc1.devtunnels.ms";
 
     [SerializeField]
     private string testToken;
@@ -106,7 +106,7 @@ public class SocketIOManager : MonoBehaviour
             return new
             {
                 token = testToken,
-                gameId = gameID
+              
             };
         };
         options.Auth = authFunction;
@@ -300,12 +300,10 @@ public class SocketIOManager : MonoBehaviour
 
     internal void CloseSocket()
     {
-        // SendDataWithNamespace("EXIT");
+        SendDataWithNamespace("game:exit");
 #if UNITY_WEBGL && !UNITY_EDITOR
-    JSManager.SendCustomMessage("OnExit");
+        JSManager.SendCustomMessage("OnExit");
 #endif
-
-        this.manager.Close();
     }
 
     private void ParseResponse(string jsonObject)
