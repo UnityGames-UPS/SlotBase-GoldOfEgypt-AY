@@ -42,8 +42,8 @@ public class SocketIOManager : MonoBehaviour
     [SerializeField] internal JSFunctCalls JSManager;
 
     protected string SocketURI = null;
-    //protected string TestSocketURI = "https://game-crm-rtp-backend.onrender.com/";
-    protected string TestSocketURI = "https://vd20qkgb-5000.inc1.devtunnels.ms";
+    
+    protected string TestSocketURI = "https://sl3l5zz3-5000.inc1.devtunnels.ms/";
 
     [SerializeField]
     private string testToken;
@@ -198,7 +198,7 @@ public class SocketIOManager : MonoBehaviour
         gameSocket.On<string>(SocketIOEventTypes.Disconnect, OnDisconnected);
         gameSocket.On<string>(SocketIOEventTypes.Error, OnError);
         gameSocket.On<string>("game:init", OnListenEvent);
-        gameSocket.On<string>("spin:result", OnResult);
+        gameSocket.On<string>("result", OnResult);
         gameSocket.On<bool>("socketState", OnSocketState);
         gameSocket.On<string>("internalError", OnSocketError);
         gameSocket.On<string>("alert", OnSocketAlert);
@@ -399,10 +399,13 @@ public class SocketIOManager : MonoBehaviour
     {
         isResultdone = false;
         MessageData message = new MessageData();
-        message.currentBet = slotManager.BetCounter;
+        message.payload = new SentDeta();
+        message.type = "SPIN";
+        Debug.Log(slotManager.BetCounter);
+        message.payload.betIndex = slotManager.BetCounter;
         // Serialize message data to JSON
         string json = JsonUtility.ToJson(message);
-        SendDataWithNamespace("spin:request", json);
+        SendDataWithNamespace("request", json);
     }
 
     private List<string> RemoveQuotes(List<string> stringList)
@@ -474,8 +477,20 @@ public class SocketIOManager : MonoBehaviour
 [Serializable]
 public class MessageData
 {
-    public int currentBet;
+    public string type;
+
+    public SentDeta payload;
 }
+
+[Serializable]
+public class SentDeta
+{
+    public int betIndex;
+    public string Event;
+    public double lastWinning;
+    public int index;
+}
+
 
 [Serializable]
 public class GameData

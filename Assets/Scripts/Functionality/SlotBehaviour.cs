@@ -827,10 +827,10 @@ public class SlotBehaviour : MonoBehaviour
         {
             playScatter = true;
         }
-        if (SocketManager.ResultData.bonus.amount > 0)
-        {
-            playBonus = true;
-        }
+        //if (SocketManager.ResultData.bonus.amount > 0)
+        //{
+        //    playBonus = true;
+        //}
         if (SocketManager.ResultData.freeSpin.isFreeSpin)
         {
             playFreespin = true;
