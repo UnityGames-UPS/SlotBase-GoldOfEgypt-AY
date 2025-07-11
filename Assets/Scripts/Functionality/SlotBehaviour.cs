@@ -425,61 +425,61 @@ public class SlotBehaviour : MonoBehaviour
         animScript.textureArray.TrimExcess();
         switch (val)
         {
-            case 0:
+            case 5:
                 for (int i = 0; i < Wick_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(Wick_Sprite[i]);
                 }
                 break;
-            case 1:
+            case 6:
                 for (int i = 0; i < Shen_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(Shen_Sprite[i]);
                 }
                 break;
-            case 2:
+            case 7:
                 for (int i = 0; i < Eye_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(Eye_Sprite[i]);
                 }
                 break;
-            case 3:
+            case 8:
                 for (int i = 0; i < Ankh_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(Ankh_Sprite[i]);
                 }
                 break;
-            case 4:
+            case 9:
                 for (int i = 0; i < Lotus_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(Lotus_Sprite[i]);
                 }
                 break;
-            case 5:
+            case 0:
                 for (int i = 0; i < A_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(A_Sprite[i]);
                 }
                 break;
-            case 6:
+            case 1:
                 for (int i = 0; i < K_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(K_Sprite[i]);
                 }
                 break;
-            case 7:
+            case 2:
                 for (int i = 0; i < J_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(J_Sprite[i]);
                 }
                 break;
-            case 8:
+            case 3:
                 for (int i = 0; i < Q_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(Q_Sprite[i]);
                 }
                 break;
-            case 9:
+            case 4:
                 for (int i = 0; i < Ten_Sprite.Length; i++)
                 {
                     animScript.textureArray.Add(Ten_Sprite[i]);
