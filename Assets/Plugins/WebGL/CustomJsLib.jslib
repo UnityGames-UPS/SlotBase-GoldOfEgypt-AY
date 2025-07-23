@@ -49,7 +49,9 @@ mergeInto(LibraryManager.library, {
             }
           });
         }
-       window.parent.dispatchReactUnityEvent(message);
+        if(window.parent.dispatchReactUnityEvent != null){
+          window.parent.dispatchReactUnityEvent(message);
+        }
       }
     }
 });
