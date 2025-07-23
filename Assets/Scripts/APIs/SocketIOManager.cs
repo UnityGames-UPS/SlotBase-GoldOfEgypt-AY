@@ -36,14 +36,11 @@ public class SocketIOManager : MonoBehaviour
     private Socket gameSocket; //BackendChanges
     private SocketManager manager;
 
-    [SerializeField]
-    internal JSHandler _jsManager;
-
     [SerializeField] internal JSFunctCalls JSManager;
 
     protected string SocketURI = null;
-    
-    protected string TestSocketURI = "https://9qr6bgs3-5000.inc1.devtunnels.ms/";
+
+    [SerializeField]  protected string TestSocketURI = "http://localhost:5000/";
 
     [SerializeField]
     private string testToken;

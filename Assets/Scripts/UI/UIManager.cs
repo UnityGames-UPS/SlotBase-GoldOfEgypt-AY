@@ -373,6 +373,9 @@ public class UIManager : MonoBehaviour
                 Win_Image.gameObject.SetActive(false);
                 jackpot_Image.gameObject.SetActive(true);
                 break;
+            case 5:
+                if (Win_Image) Win_Image.sprite = MegaWin_Sprite;
+                break;
         }
 
         StartPopupAnim(amount);

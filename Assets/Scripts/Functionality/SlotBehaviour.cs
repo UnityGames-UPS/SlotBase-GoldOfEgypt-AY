@@ -516,7 +516,6 @@ public class SlotBehaviour : MonoBehaviour
     //starts the spin process
     private void StartSlots(bool autoSpin = false)
     {
-        if (audioController) audioController.PlaySpinButtonAudio();
 
         if (!autoSpin)
         {
@@ -528,6 +527,9 @@ public class SlotBehaviour : MonoBehaviour
                 AutoSpinRoutine = null;
             }
         }
+        if (audioController) audioController.PlaySpinButtonAudio();
+        if (TotalWin_text) TotalWin_text.text = "0.000";
+
         WinningsAnim(false);
         if (SlotStart_Button) SlotStart_Button.interactable = false;
         if (TempList.Count > 0)
@@ -727,6 +729,14 @@ public class SlotBehaviour : MonoBehaviour
         {
             uiManager.PopulateWin(3, SocketManager.ResultData.payload.winAmount);
         }
+        else if (SocketManager.ResultData.jackpot.isTriggered)
+        {
+            uiManager.PopulateWin(4, SocketManager.ResultData.payload.winAmount);
+        }
+        else if (SocketManager.ResultData.scatter.amount>0)
+        {
+            uiManager.PopulateWin(3, SocketManager.ResultData.payload.winAmount);
+        }
         else
         {
             CheckPopups = false;
@@ -739,10 +749,7 @@ public class SlotBehaviour : MonoBehaviour
         List<int> y_points = null;
         if (LineId.Count > 0)
         {
-            if (jackpot <= 0)
-            {
-                if (audioController) audioController.PlayWLAudio("win");
-            }
+            
 
             for (int i = 0; i < LineId.Count; i++)
             {
@@ -750,17 +757,11 @@ public class SlotBehaviour : MonoBehaviour
                 PayCalculator.GeneratePayoutLinesBackend(y_points, y_points.Count);
             }
 
-            if (jackpot > 0)
+            if (jackpot <= 0)
             {
-                if (audioController) audioController.PlayWLAudio("megaWin");
-                for (int i = 0; i < Tempimages.Count; i++)
-                {
-                    for (int k = 0; k < Tempimages[i].slotImages.Count; k++)
-                    {
-                        StartGameAnimation(Tempimages[i].slotImages[k].gameObject);
-                    }
-                }
+                if (audioController) audioController.PlayWLAudio("win");
             }
+
             else
             {
                 List<KeyValuePair<int, int>> coords = new();
