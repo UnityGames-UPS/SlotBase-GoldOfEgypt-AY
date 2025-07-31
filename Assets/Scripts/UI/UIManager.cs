@@ -152,6 +152,9 @@ public class UIManager : MonoBehaviour
     private Button CloseDisconnect_Button;
     [SerializeField]
     private GameObject DisconnectPopup_Object;
+    [Header("Reconnection Popup")]
+    [SerializeField]
+    private GameObject ReconectingPopup_Object;
 
     [Header("AnotherDevice Popup")]
     [SerializeField]
@@ -159,11 +162,7 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private GameObject ADPopup_Object;
 
-    [Header("Reconnection Popup")]
-    [SerializeField]
-    private TMP_Text reconnect_Text;
-    [SerializeField]
-    private GameObject ReconnectPopup_Object;
+
 
     [Header("LowBalance Popup")]
     [SerializeField]
@@ -194,6 +193,8 @@ public class UIManager : MonoBehaviour
     private SocketIOManager socketManager;
     [SerializeField]
     private Button m_AwakeGameButton;
+    [SerializeField] internal GameObject RaycastBlocker;
+
 
     private bool isMusic = true;
     private bool isSound = true;
@@ -336,7 +337,7 @@ public class UIManager : MonoBehaviour
         OpenPopup(LBPopup_Object);
     }
 
-    internal void DisconnectionPopup(bool isReconnection)
+    internal void DisconnectionPopup()
     {
         //if (isReconnection)
         //{
@@ -345,10 +346,10 @@ public class UIManager : MonoBehaviour
         //else
         //{
         //    ClosePopup(ReconnectPopup_Object);
-            if (!isExit)
-            {
-                OpenPopup(DisconnectPopup_Object);
-            }
+        if (!isExit)
+        {
+            OpenPopup(DisconnectPopup_Object);
+        }
         //}
     }
 
@@ -377,15 +378,15 @@ public class UIManager : MonoBehaviour
                 if (Win_Image) Win_Image.sprite = MegaWin_Sprite;
                 break;
         }
-
+        if (audioController) audioController.PlayWLAudio("win");
         StartPopupAnim(amount);
     }
 
     private void ChangePage(bool isRight)
     {
-        if(isRight)
+        if (isRight)
         {
-            if(PageCounter < Pages_Object.Length - 1)
+            if (PageCounter < Pages_Object.Length - 1)
             {
                 Pages_Object[PageCounter].SetActive(false);
                 PageCounter++;
@@ -400,7 +401,7 @@ public class UIManager : MonoBehaviour
         }
         else
         {
-            if (PageCounter > 0) 
+            if (PageCounter > 0)
             {
                 Pages_Object[PageCounter].SetActive(false);
                 PageCounter--;
@@ -430,7 +431,8 @@ public class UIManager : MonoBehaviour
         if (Free_Text) Free_Text.text = ExtraSpins.ToString() + " Free spins awarded.";
         if (MainPopup_Object) MainPopup_Object.SetActive(true);
 
-        DOVirtual.DelayedCall(2f, () => {
+        DOVirtual.DelayedCall(2f, () =>
+        {
             StartFreeSpins(spins);
         });
     }
@@ -441,7 +443,7 @@ public class UIManager : MonoBehaviour
         if (WinPopup_Object) WinPopup_Object.SetActive(true);
         if (MainPopup_Object) MainPopup_Object.SetActive(true);
 
-        TextTween =  DOTween.To(() => initAmount, (val) => initAmount = val, amount, 5f).OnUpdate(() =>
+        TextTween = DOTween.To(() => initAmount, (val) => initAmount = val, amount, 5f).OnUpdate(() =>
         {
             if (Win_Text) Win_Text.text = initAmount.ToString("f3");
         });
@@ -467,7 +469,7 @@ public class UIManager : MonoBehaviour
         OpenPopup(ADPopup_Object);
     }
 
-    internal void InitialiseUIData( Paylines symbolsText)
+    internal void InitialiseUIData(Paylines symbolsText)
     {
         //if (Support_Button) Support_Button.onClick.RemoveAllListeners();
         //if (Support_Button) Support_Button.onClick.AddListener(delegate { UrlButtons(SupportUrl); });
@@ -518,7 +520,7 @@ public class UIManager : MonoBehaviour
             }
             if (paylines.symbols[i].name.ToUpper() == "BONUS")
             {
-               // if (Bonus_Text) Bonus_Text.text = paylines.symbols[i].description.ToString();
+                // if (Bonus_Text) Bonus_Text.text = paylines.symbols[i].description.ToString();
             }
             if (paylines.symbols[i].name.ToUpper() == "WILD")
             {
@@ -533,7 +535,22 @@ public class UIManager : MonoBehaviour
         audioController.PlayButtonAudio();
         slotManager.CallCloseSocket();
     }
+    internal void ReconnectionPopup()
+    {
+        OpenPopup(ReconectingPopup_Object);
+    }
+    internal void CheckAndClosePopups()
+    {
 
+        if (ReconectingPopup_Object.activeInHierarchy)
+        {
+            ClosePopup(ReconectingPopup_Object);
+        }
+        if (DisconnectPopup_Object.activeInHierarchy)
+        {
+            ClosePopup(DisconnectPopup_Object);
+        }
+    }
     private void OpenMenu()
     {
         audioController.PlayButtonAudio();

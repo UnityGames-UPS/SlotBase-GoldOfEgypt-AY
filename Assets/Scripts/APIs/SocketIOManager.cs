@@ -40,13 +40,13 @@ public class SocketIOManager : MonoBehaviour
 
     protected string SocketURI = null;
 
-    [SerializeField]  protected string TestSocketURI = "http://localhost:5000/";
+    [SerializeField] protected string TestSocketURI = "http://localhost:5000/";
 
     [SerializeField]
     private string testToken;
 
     protected string gameID = "SL-GOE";
-   // protected string gameID = "";
+    // protected string gameID = "";
 
     internal bool isLoaded = false;
 
@@ -54,6 +54,20 @@ public class SocketIOManager : MonoBehaviour
 
     private const int maxReconnectionAttempts = 6;
     private readonly TimeSpan reconnectionDelay = TimeSpan.FromSeconds(10);
+
+    private bool isConnected = false; //Back2 Start
+    private bool hasEverConnected = false;
+    private const int MaxReconnectAttempts = 5;
+    private const float ReconnectDelaySeconds = 2f;
+
+    private float lastPongTime = 0f;
+    private float pingInterval = 2f;
+    private float pongTimeout = 3f;
+    private bool waitingForPong = false;
+    private int missedPongs = 0;
+    private const int MaxMissedPongs = 5;
+    private Coroutine PingRoutine; //Back2 end
+
 
     private void Awake()
     {
@@ -86,12 +100,11 @@ public class SocketIOManager : MonoBehaviour
     private void OpenSocket()
     {
         // Create and setup SocketOptions
-        SocketOptions options = new SocketOptions();
-        options.ReconnectionAttempts = maxReconnectionAttempts;
-        options.ReconnectionDelay = reconnectionDelay;
-        options.Reconnection = true;
-        options.ConnectWith = Best.SocketIO.Transports.TransportTypes.WebSocket; //BackendChanges
-
+        SocketOptions options = new SocketOptions(); //Back2 Start
+        options.AutoConnect = false;
+        options.Reconnection = false;
+        options.Timeout = TimeSpan.FromSeconds(3); //Back2 end
+        options.ConnectWith = Best.SocketIO.Transports.TransportTypes.WebSocket;
         // Application.ExternalCall("window.parent.postMessage", "authToken", "*");
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -103,7 +116,7 @@ public class SocketIOManager : MonoBehaviour
             return new
             {
                 token = testToken,
-              
+
             };
         };
         options.Auth = authFunction;
@@ -192,43 +205,77 @@ public class SocketIOManager : MonoBehaviour
         }
         // Set subscriptions
         gameSocket.On<ConnectResponse>(SocketIOEventTypes.Connect, OnConnected);
-        gameSocket.On<string>(SocketIOEventTypes.Disconnect, OnDisconnected);
-        gameSocket.On<string>(SocketIOEventTypes.Error, OnError);
+        gameSocket.On(SocketIOEventTypes.Disconnect, OnDisconnected); //Back2 Start
+        gameSocket.On(SocketIOEventTypes.Error, OnError); //Back2 Start
+
         gameSocket.On<string>("game:init", OnListenEvent);
         gameSocket.On<string>("result", OnResult);
         gameSocket.On<bool>("socketState", OnSocketState);
         gameSocket.On<string>("internalError", OnSocketError);
         gameSocket.On<string>("alert", OnSocketAlert);
+        gameSocket.On<string>("pong", OnPongReceived); //Back2 Start
+
         gameSocket.On<string>("AnotherDevice", OnSocketOtherDevice); //BackendChanges Finish
+        manager.Open();
     }
 
     // Connected event handler implementation
-    void OnConnected(ConnectResponse resp)
+    // Connected event handler implementation
+    void OnConnected(ConnectResponse resp) //Back2 Start
     {
-        Debug.Log("Connected!");
+        Debug.Log("✅ Connected to server.");
+
+        if (hasEverConnected)
+        {
+            uiManager.CheckAndClosePopups();
+        }
+
+        isConnected = true;
+        hasEverConnected = true;
+        waitingForPong = false;
+        missedPongs = 0;
+        lastPongTime = Time.time;
         SendPing();
-    }
+    } //Back2 end
     void OnResult(string data)
     {
         ParseResponse(data);
-    }
-    private void OnDisconnected(string response)
-    {
-        Debug.Log("Disconnected from the server");
-        StopAllCoroutines();
     }
 
     private void OnError(string response)
     {
         Debug.LogError("Error: " + response);
     }
+    private void OnError()
+    {
+        Debug.LogError("Socket Error");
+    }
+    private void OnDisconnected() //Back2 Start
+    {
+        Debug.LogWarning("⚠️ Disconnected from server.");
+        isConnected = false;
+        ResetPingRoutine();
+    } //Back2 end
+    private void OnPongReceived(string data) //Back2 Start
+    {
+        Debug.Log("✅ Received pong from server.");
+        waitingForPong = false;
+        missedPongs = 0;
+        lastPongTime = Time.time;
+        Debug.Log($"⏱️ Updated last pong time: {lastPongTime}");
+        Debug.Log($"📦 Pong payload: {data}");
+    } //Back2 end
 
     private void OnListenEvent(string data)
     {
         Debug.Log("Received some_event with data: " + data);
         ParseResponse(data);
     }
-
+    void CloseGame()
+    {
+        Debug.Log("Unity: Closing Game");
+        StartCoroutine(CloseSocket());
+    }
     private void OnSocketState(bool state)
     {
         if (state)
@@ -255,15 +302,65 @@ public class SocketIOManager : MonoBehaviour
         //uiManager.ADfunction();
     }
 
-    private void SendPing()
+    private void SendPing() //Back2 Start
     {
-        InvokeRepeating("AliveRequest", 0f, 3f);
+        ResetPingRoutine();
+        PingRoutine = StartCoroutine(PingCheck());
     }
+    void ResetPingRoutine()
+    {
+        if (PingRoutine != null)
+        {
+            StopCoroutine(PingRoutine);
+        }
+        PingRoutine = null;
+    }
+
+
 
     private void AliveRequest()
     {
         SendDataWithNamespace("YES I AM ALIVE");
     }
+
+    private IEnumerator PingCheck()
+    {
+        while (true)
+        {
+            Debug.Log($"🟡 PingCheck | waitingForPong: {waitingForPong}, missedPongs: {missedPongs}, timeSinceLastPong: {Time.time - lastPongTime}");
+
+            if (missedPongs == 0)
+            {
+                uiManager.CheckAndClosePopups();
+            }
+
+            // If waiting for pong, and timeout passed
+            if (waitingForPong)
+            {
+                if (missedPongs == 2)
+                {
+                    uiManager.ReconnectionPopup();
+                }
+                missedPongs++;
+                Debug.LogWarning($"⚠️ Pong missed #{missedPongs}/{MaxMissedPongs}");
+
+                if (missedPongs >= MaxMissedPongs)
+                {
+                    Debug.LogError("❌ Unable to connect to server — 5 consecutive pongs missed.");
+                    isConnected = false;
+                    uiManager.DisconnectionPopup();
+                    yield break;
+                }
+            }
+
+            // Send next ping
+            waitingForPong = true;
+            lastPongTime = Time.time;
+            Debug.Log("📤 Sending ping...");
+            SendDataWithNamespace("ping");
+            yield return new WaitForSeconds(pingInterval);
+        }
+    } //Back2 end
 
     private void SendDataWithNamespace(string eventName, string json = null)
     {
@@ -284,7 +381,7 @@ public class SocketIOManager : MonoBehaviour
         {
             Debug.LogWarning("Socket is not connected.");
         }
-    
+
     }
 
     internal void closeSocketReactnativeCall()
@@ -295,17 +392,30 @@ public class SocketIOManager : MonoBehaviour
         this.manager.Close();
     }
 
-    internal void CloseSocket()
+    internal IEnumerator CloseSocket() //Back2 Start
     {
-        SendDataWithNamespace("game:exit");
+        uiManager.RaycastBlocker.SetActive(true);
+        ResetPingRoutine();
+
+        Debug.Log("Closing Socket");
+
+        manager?.Close();
+        manager = null;
+
+        Debug.Log("Waiting for socket to close");
+
+        yield return new WaitForSeconds(0.5f);
+
+        Debug.Log("Socket Closed");
+
 #if UNITY_WEBGL && !UNITY_EDITOR
-        JSManager.SendCustomMessage("OnExit");
+    JSManager.SendCustomMessage("OnExit"); //Telling the react platform user wants to quit and go back to homepage
 #endif
-    }
+    } //Back2 end
 
     private void ParseResponse(string jsonObject)
     {
-        Debug.Log("jjx: "+jsonObject);
+        Debug.Log("jjx: " + jsonObject);
         Root myData = JsonConvert.DeserializeObject<Root>(jsonObject);
 
         string id = myData.id;
@@ -318,13 +428,13 @@ public class SocketIOManager : MonoBehaviour
                     UIData = myData.uiData;
                     PlayerData = myData.player;
                     bonusdata = GetBonusData(myData.gameData.spinBonus);
-               
+
                     if (!SetInit)
                     {
                         Debug.Log(jsonObject);
                         List<string> LinesString = ConvertListListIntToListString(InitialData.lines);
-                     //   List<string> InitialReels = ConvertListOfListsToStrings(initialData.Reel);
-                       
+                        //   List<string> InitialReels = ConvertListOfListsToStrings(initialData.Reel);
+
                         PopulateSlotSocket(LinesString);
                         SetInit = true;
                     }
@@ -352,7 +462,7 @@ public class SocketIOManager : MonoBehaviour
                         Debug.Log("Dispose my Socket");
                         this.manager.Close();
                     }
-                   // Application.ExternalCall("window.parent.postMessage", "onExit", "*");
+                    // Application.ExternalCall("window.parent.postMessage", "onExit", "*");
 #if UNITY_WEBGL && !UNITY_EDITOR
                         JSManager.SendCustomMessage("OnExit");
 #endif
@@ -376,8 +486,9 @@ public class SocketIOManager : MonoBehaviour
         //uiManager.InitialiseUIData(initUIData.AbtLogo.link, initUIData.AbtLogo.logoSprite, initUIData.ToULink, initUIData.PopLink, initUIData.paylines);
     }
 
-    private void PopulateSlotSocket( List<string> LineIds)
+    private void PopulateSlotSocket(List<string> LineIds)
     {
+        uiManager.RaycastBlocker.SetActive(false);
         slotManager.shuffleInitialMatrix();
         for (int i = 0; i < LineIds.Count; i++)
         {
